@@ -1,0 +1,3 @@
+CUST001, Alice Martin, alice@pymart.com, 50
+CUST002, Bob Dupont, bob@pymart.com, 20
+CUST003, Charlie Durand, charlie@example.com, 0

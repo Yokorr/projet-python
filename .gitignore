@@ -1,0 +1,7 @@
+Set-Content -Path .gitignore -Value @"
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+*.swp
+"@
