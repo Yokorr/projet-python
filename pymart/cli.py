@@ -4,6 +4,7 @@ import sys
 from pymart.exceptions import DataValidationError, PyMartError
 from pymart.parsers import parse_customers, parse_orders, parse_products
 from pymart.reports import generate_daily_report, generate_monthly_report
+from pymart.server import run_server
 
 
 def handle_import(args):
@@ -42,6 +43,21 @@ def handle_report(args):
     return 0
   except (DataValidationError, FileNotFoundError, PyMartError) as err:
     print(f"Erreur lors du rapport : {err}", file=sys.stderr)
+    return 1
+
+
+def handle_serve(args):
+  try:
+    run_server(
+        port=args.port,
+        products_path=args.products,
+        customers_path=args.customers,
+        orders_path=args.orders,
+        reports_dir=args.out,
+    )
+    return 0
+  except Exception as err:
+    print(f"Erreur serveur : {err}", file=sys.stderr)
     return 1
 
 
@@ -96,6 +112,27 @@ def build_parser():
       "--orders", default="data/orders.txt", help="Chemin vers orders.txt"
   )
 
+  serve_parser = subparsers.add_parser(
+      "serve", help="Lancer l'interface web locale du back-office"
+  )
+  serve_parser.add_argument(
+      "--port", type=int, default=8000, help="Port d'ecoute HTTP (defaut: 8000)"
+  )
+  serve_parser.add_argument(
+      "--products", default="data/products.txt", help="Chemin vers products.txt"
+  )
+  serve_parser.add_argument(
+      "--customers",
+      default="data/customers.txt",
+      help="Chemin vers customers.txt",
+  )
+  serve_parser.add_argument(
+      "--orders", default="data/orders.txt", help="Chemin vers orders.txt"
+  )
+  serve_parser.add_argument(
+      "--out", default="reports", help="Dossier de destination des rapports"
+  )
+
   return parser
 
 
@@ -107,6 +144,8 @@ def main():
     sys.exit(handle_import(args))
   elif args.command == "report":
     sys.exit(handle_report(args))
+  elif args.command == "serve":
+    sys.exit(handle_serve(args))
 
 
 if __name__ == "__main__":

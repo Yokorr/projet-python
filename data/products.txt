@@ -3,3 +3,4 @@ SKU200, Wireless Mouse, 19.99, 15
 SKU300, USB-C Cable, 4.50, 80
 SKU800, Organic Milk, 1.20, 40, 2026-11-05
 SKU900, Smart TV, 399.00, 5
+SKU676, Etagère Murale, 13.89, 6
