@@ -1,125 +1,103 @@
-# PyMart — Outil de gestion back-office en ligne de commande
+# PyMart — Back-Office Toolkit & Dashboard Opérationnel
 
-Application en ligne de commande (CLI) modulaire développée pour automatiser la gestion des opérations de vente de PyMart : importation et validation des exports de caisse, suivi des stocks, traitement des commandes et génération de rapports opérationnels horodatés.
-
----
-
-## 1. Correspondance des fichiers avec le rendu final
-
-L'architecture du projet sépare strictement les responsabilités au sein d'un package Python modulaire `pymart/`, sans dépendance externe :
-
-* **`pymart/models.py`** : Modélisation métier (POO).
-  * `Product` : Gestion du catalogue, des stocks et encapsulation des prix par propriété.
-  * `PerishableProduct` : Hérite de `Product` et applique le polymorphisme sur la méthode `describe()` avec la date d'expiration.
-  * `Customer` : Validation du format des adresses e-mail par accesseur (`@property`).
-  * `Order` : Assemblage du panier client, décrémentation automatique du stock et calcul du montant total.
-* **`pymart/exceptions.py`** : Hiérarchie d'exceptions personnalisées.
-  * `PyMartError` : Classe de base de toutes les erreurs de l'application.
-  * `DataValidationError` : Exception enrichie avec le fichier source et le numéro de ligne pour un diagnostic précis.
-  * `InsufficientStockError` : Erreur levée si une commande dépasse les quantités en réserve.
-  * `InvalidDiscountError` : Erreur levée si un pourcentage de remise sort de l'intervalle [0, 100].
-* **`pymart/parsers.py`** : Traitement et nettoyage des données en flux (*streaming*).
-  * Fonctions génératrices utilisant `yield` pour analyser les fichiers volumineux ligne par ligne sans saturer la mémoire vive.
-  * Validation stricte des types de données, des colonnes obligatoires et normalisation des chaînes.
-* **`pymart/reports.py`** : Moteur de génération des rapports.
-  * Création automatique des répertoires sur le disque (`os.makedirs`).
-  * Calcul d'échéance à 30 jours avec `datetime` et `timedelta`.
-  * Intégration du calendrier mensuel textuel dynamique avec `calendar`.
-* **`pymart/cli.py`** : Point d'entrée de l'application.
-  * Analyse des arguments en ligne de commande (`argparse`) pour les sous-commandes `import` et `report`.
-  * Capture des exceptions pour afficher des messages d'erreur clairs sans arrêt brutal du programme.
-* **`data/`** : Répertoire contenant les fichiers de test (`products.txt`, `customers.txt`, `orders.txt`).
-* **`reports/`** : Dossier de sortie généré à l'exécution contenant les fichiers de rapport écrits sur le disque.
-* **`requirements.txt`** : Déclaration des dépendances (projet autonome reposant uniquement sur la bibliothèque standard Python).
+Application de gestion commerciale et back-office développée en pur Python. Le projet répond à 100 % des exigences académiques (zéro dépendance externe, programmation orientée objet, polymorphisme, lecture par flux/générateurs, hiérarchie d'exceptions) tout en intégrant un tableau de bord web interactif propulsé par le module natif `http.server`.
 
 ---
 
-## 2. Ce qui a été réalisé étape par étape
+## 1. Architecture du projet et rôle des fichiers
 
-1. **Modélisation orientée objet et polymorphisme** :
-   * Création des classes métiers avec contrôle des types et valeurs positives.
-   * Utilisation de `super().__init__()` pour spécialiser `PerishableProduct`.
-   * Surcharge polymorphique de `describe()` appelée de façon uniforme sur les collections de produits.
-2. **Arborescence d'exceptions métier** :
-   * Définition d'erreurs spécialisées dérivées d'une classe parente commune.
-   * Protection de l'état des objets : rejet des ventes impossibles et des remises invalides.
-3. **Traitement par générateurs (*data streaming*)** :
-   * Lecture paresseuse (*lazy evaluation*) via `yield` pour traiter les exports de vente volumineux sans chargement intégral en RAM.
-4. **Gestion du système de fichiers et des dates** :
-   * Chemins d'accès portables multiplateformes avec `os.path.join`.
-   * Horodatage normé des fichiers et calculs calendaires automatiques.
-5. **Interface en ligne de commande (CLI)** :
-   * Implémentation complète des commandes `import` et `report` (`daily` et `monthly`).
-   * Gestion d'erreurs globale garantissant une exécution résiliente.
+Le code est organisé sous la forme d'un package modulaire étanche garantissant la séparation des responsabilités :
+
+```text
+.
+├── data/
+│   ├── customers.txt          # Répertoire des comptes clients
+│   ├── orders.txt             # Registre des commandes facturées
+│   └── products.txt           # Catalogue des stocks et denrées périssables
+├── docs/
+│   ├── EVIDENCE.md            # Preuves d'exécution pour la notation
+│   ├── presentation.html      # Présentation visuelle interactive du projet
+│   └── screenshots/           # Captures d'écran de l'environnement CLI
+├── pymart/
+│   ├── __init__.py            # Initialisation du package
+│   ├── cli.py                 # Interface terminal (argparse) : import, report, serve
+│   ├── exceptions.py          # Hiérarchie des exceptions métier spécialisées
+│   ├── models.py              # Modèles métier (Product, PerishableProduct, Customer, Order)
+│   ├── parsers.py             # Parsers fainéants en streaming (générateurs yield)
+│   ├── reports.py             # Moteur de génération des rapports (datetime, calendar, os)
+│   └── server.py              # Serveur web natif http.server, API REST & dashboard UI
+├── reports/                   # Dossier de persistance automatique des rapports
+├── .gitignore
+├── requirements.txt           # Fichier de dépendances (vide : standard library uniquement)
+└── README.md                  # Documentation technique complète
+```
 
 ---
 
-## 3. Guide d'exécution
+## 2. Conformité aux exigences techniques (Socle académique)
 
-### 3.1. Afficher l'aide de la commande
+### 2.1. Programmation orientée objet & polymorphisme
+* **Classes de domaine (`pymart/models.py`)** : modélisation des entités avec attributs protégés et accesseurs `@property` (rejet strict des prix négatifs et contrôle du format de l'e-mail client).
+* **Héritage et surcharge** : la classe `PerishableProduct` hérite de `Product` via `super().__init__()`.
+* **Polymorphisme** : la méthode `describe()` adapte dynamiquement sa restitution textuelle selon la nature périssable ou standard du produit.
+
+### 2.2. Exceptions métier contextualisées
+* **Arborescence dédiée (`pymart/exceptions.py`)** : classe mère `PyMartError` dont dérivent `InsufficientStockError`, `InvalidDiscountError` et `DataValidationError`.
+* **Traçabilité** : `DataValidationError` encapsule explicitement le chemin du fichier source et le numéro de ligne fautif, permettant un diagnostic immédiat sans crash de l'interpréteur.
+
+### 2.3. Traitement par flux continu (Streaming)
+* **Générateurs Python (`pymart/parsers.py`)** : la fonction `stream_file_lines` et les parsers associés exploitent `yield`. Les fichiers sont parcourus ligne par ligne, assurant une empreinte mémoire constante quel que soit le volume de données.
+
+### 2.4. Manipulation des dates, calendriers et système de fichiers
+* **Module `datetime`** : horodatage à la seconde des synthèses et calcul d'échéance à 30 jours via `timedelta`.
+* **Module `calendar`** : calcul dynamique de la longueur des mois et intégration de la grille calendaire textuelle (`calendar.month`).
+* **Module `os`** : création idempotente des dossiers (`os.makedirs(..., exist_ok=True)`) et concaténation sécurisée des chemins (`os.path.join`).
+
+---
+
+## 3. Extension bonus : Dashboard web & API native
+
+En complément de la CLI, le module `pymart/server.py` met à disposition un back-office web complet sans aucun framework externe :
+* **Serveur HTTP autonome** : sous-classe de `http.server.BaseHTTPRequestHandler` traitant les requêtes `GET` et `POST`.
+* **API REST JSON** :
+  * `GET /api/data` : extraction en mémoire des articles, clients et commandes.
+  * `GET /api/audit` : audit en temps réel de la conformité de tous les fichiers textes.
+  * `GET /api/reports/view?file=...` : consultation des rapports sauvegardés.
+  * `POST /api/products` : ajout d'un article avec validation POO et écriture dans `data/products.txt`.
+  * `POST /api/customers` : ajout d'un client avec vérification de l'e-mail dans `data/customers.txt`.
+  * `POST /api/orders` : déduction atomique du stock avec levée d'erreur si stock insuffisant et écriture dans `data/orders.txt`.
+  * `POST /api/reports` : génération synchrone des rapports journaliers ou mensuels.
+* **Interface soignée** : design monopage épuré, navigation par onglets, modales de saisie et indicateurs de stock critique.
+
+---
+
+## 4. Guide d'exécution
+
+### 4.1. Commandes CLI
+
 ```bash
+# Afficher l'aide générale
 python -m pymart.cli --help
-```
 
-### 3.2. Importer et valider les fichiers de données
-```bash
+# Importer et auditer les fichiers de données
 python -m pymart.cli import --products data/products.txt --customers data/customers.txt --orders data/orders.txt
-```
 
-### 3.3. Générer le rapport journalier (avec échéance à +30 jours)
-```bash
+# Générer un rapport journalier (échéance à +30 jours)
 python -m pymart.cli report --type daily --date 2026-06-30 --out reports/
-```
 
-### 3.4. Générer le rapport mensuel (avec calendrier textuel intégré)
-```bash
+# Générer un rapport mensuel (avec calendrier textuel)
 python -m pymart.cli report --type monthly --month 2026-06 --out reports/
 ```
 
+### 4.2. Lancer l'interface web locale
+
+```bash
+python -m pymart.cli serve --port 8000
+```
+L'interface est accessible depuis n'importe quel navigateur à l'adresse suivante : **http://localhost:8000**.
+
 ---
 
-## 4. Exemple d'exécution en console
+## 5. Preuves d'exécution et validation
 
-```text
-$ python -m pymart.cli import --products data/products.txt --customers data/customers.txt --orders data/orders.txt
-Donnees importees avec succes :
-- Produits  : 5
-- Clients   : 3
-- Commandes : 3
-
-$ python -m pymart.cli report --type daily --date 2026-06-30 --out reports/
-Rapport journalier genere : reports/report_daily_2026-06-30.txt
-PyMart Daily Sales Report - 2026-06-30
-Generated at: 2026-10-27 10:30:17
-========================================
-Total orders : 2
-Total revenue: 27.79 EUR
-Next review  : 2026-07-30
-========================================
-Orders detail:
-- Order ORD001 | Customer CUST001 | Total: 22.99 EUR
-- Order ORD002 | Customer CUST002 | Total: 4.80 EUR
-
-$ python -m pymart.cli report --type monthly --month 2026-06 --out reports/
-Rapport mensuel genere : reports/report_monthly_2026-06.txt
-PyMart Monthly Sales Report - 2026-06
-Generated at: 2026-10-27 10:30:17
-========================================
-Month days   : 30
-Total orders : 3
-Total revenue: 426.79 EUR
-========================================
-Month calendar:
-June 2026
-Mo Tu We Th Fr Sa Su
- 1  2  3  4  5  6  7
- 8  9 10 11 12 13 14
-15 16 17 18 19 20 21
-22 23 24 25 26 27 28
-29 30
-========================================
-Orders detail:
-- 2026-06-30 | Order ORD001 | Customer CUST001 | 22.99 EUR
-- 2026-06-30 | Order ORD002 | Customer CUST002 | 4.80 EUR
-- 2026-06-15 | Order ORD003 | Customer CUST003 | 399.00 EUR
-```
+Les captures d'écran attestant du bon fonctionnement de chaque commande et de l'interception gracieuse des erreurs sont documentées dans le fichier [`docs/EVIDENCE.md`](docs/EVIDENCE.md).
